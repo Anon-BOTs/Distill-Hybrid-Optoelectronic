@@ -1,0 +1,5 @@
+# ninja log v5
+1	47204	1744185097412281973	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/smooth_sampler/build/temp.linux-x86_64-3.8/src/smooth_sampler_cuda.o	e95051c4f0dc211f
+3	23430	1744266643964602241	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/smooth_sampler/build/temp.linux-x86_64-3.8/src/smooth_sampler.o	c8859f79fc57046a
+3	46486	1744266667032321270	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/smooth_sampler/build/temp.linux-x86_64-3.8/src/smooth_sampler_cuda.o	e95051c4f0dc211f
+2883	50277	1744854010762999708	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/smooth_sampler/build/temp.linux-x86_64-3.8/src/smooth_sampler_cuda.o	e95051c4f0dc211f

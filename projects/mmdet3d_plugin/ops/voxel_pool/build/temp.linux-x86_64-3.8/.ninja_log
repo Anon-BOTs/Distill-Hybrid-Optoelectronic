@@ -1,0 +1,9 @@
+# ninja log v5
+1	502	1744184882843340600	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool_cuda.o	18e2aa20a1bd08ae
+1	540	1744185609826960117	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool_cuda.o	1ce1b36c9a4383c
+0	542	1744186353297153005	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool_cuda.o	1ce1b36c9a4383c
+1	532	1744187133410497551	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool_cuda.o	18e2aa20a1bd08ae
+1	524	1744192517314257767	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool_cuda.o	497ed5f17003644a
+1	599	1744192559433338468	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool_cuda.o	4f96017b2da66edd
+2	528	1744266228055213463	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool_cuda.o	18e2aa20a1bd08ae
+1	21942	1744266605228966072	/high_perf_store/surround-view/lf/lm-pretrain/StreamPETR/projects/mmdet3d_plugin/ops/voxel_pool/build/temp.linux-x86_64-3.8/src/voxel_pool.o	923249b2dff16af2
