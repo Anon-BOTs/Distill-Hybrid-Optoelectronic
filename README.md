@@ -71,16 +71,16 @@ More comprehensive ablation studies can be found at APPENDIX SECTION.
 ## Installation
 This project is based on MMDetection3D, which can be constructed as follows.
 
-- Install PyTorch [v1.9.1](https://pytorch.org/get-started/previous-versions/) and mmDetection3D [v0.17.3](https://github.com/open-mmlab/mmdetection3d/tree/v0.17.3) following the [instructions](https://github.com/open-mmlab/mmdetection3d/blob/v0.17.3/docs/getting_started.md).
+- Install PyTorch [v1.13.1](https://pytorch.org/get-started/previous-versions/) and mmDetection3D [1.0.0rc6](https://github.com/open-mmlab/mmdetection3d/tree/v1.0.0rc6) following the [instructions](https://github.com/open-mmlab/mmdetection3d/blob/v1.0.0rc6/docs/en/getting_started.md).
 - Install the required environment
 
 ```
 conda create -n phoenix python=3.8
 conda activate phoenix
-conda install pytorch==1.9.1 torchvision==0.10.1 torchaudio==0.9.1 cudatoolkit=11.1 -c pytorch -c conda-forge
+pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
 
-pip install mmcv-full==1.3.11 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.9/index.html
-pip install mmdet==2.14.0 mmsegmentation==0.14.1 tifffile-2021.11.2 numpy==1.19.5 protobuf==3.19.4 scikit-image==0.19.2 pycocotools==2.0.0 nuscenes-devkit==1.0.5 spconv-cu111 gpustat numba scipy pandas matplotlib Cython shapely loguru tqdm future fire yacs jupyterlab scikit-image pybind11 tensorboardX tensorboard easydict pyyaml open3d addict pyquaternion awscli timm typing-extensions==4.7.1
+pip install mmcv-full==1.7.1 -f https://download.openmmlab.com/mmcv/dist/cu117/torch1.13/index.html
+pip install mmdet3d==1.0.0rc6 mmdet==2.28.2 mmsegmentation==0.30.0 
 ```
 ### Data Preparation
 Please download the MS-COCO and nuScenes dataset from the official website.
@@ -89,20 +89,17 @@ Please download the MS-COCO and nuScenes dataset from the official website.
 You can train and eval the model following the instructions. For example:
 ```
 # Training
-bash tools/dist_train.sh projects/configs/exp/distill_800mf_onn_v2.py 8
+bash tools/dist_train.sh 1 8 $config
 
 # test
-bash tools/dist_test.sh projects/configs/exp/distill_800mf_onn_v2.py 8
-
-# run speed
-python tools/test_4stage_cnn.py $config $ckpt --eval bbox
+bash tools/dist_test.sh 8 $config $ckpt
 ```
 ### Weights
 #### 1. Object Detection
 | Method             |  Config        | mAP  | Relative SOTA |  Model |
 |--------------------|-------------------------------------------------------------------------|------|---------------|--------
-| **1xONN-nuScenes** | [**1xONN**](projects/configs/gaussianpretrain/gp_0.075_convnext.py) | 41.8 | 93%           | [Google](https://drive.google.com/file/d/1EiyUJ6mAfCo6ASaeK5zhH0dhJtzQJcAu/view?usp=drive_link)
-| **1xONN-COCO**     | [**1xONN**](projects/exp/distill_800mf_onn_v2.py)                   | 26.3 | 97.1%         | [Google](https://drive.google.com/file/d/1eT1MrrZpBY1UBRa2NKz5mRkmbf0USvmW/view?usp=drive_link)
+| **1xONN-nuScenes** | [**1xONN**](projects/configs/exp/fcos_regnet_1onn_3cnn_nusc.py) | 19.8 | 97.5%           | [Google](https://drive.google.com/drive/folders/1Sr0M80EeB5Qmbk7fWuTIJgeKljo5U0Iz)
+| **1xONN-COCO**     | [**1xONN**](projects/configs/exp/fcos_regnet_1onn_3cnn_coco.py) | 26.3 | 88.3%         | [Google](https://drive.google.com/drive/folders/1Sr0M80EeB5Qmbk7fWuTIJgeKljo5U0Iz)
 
 
 ## News

@@ -5,13 +5,9 @@ from typing import List, Union
 import numpy as np
 import torch
 from torch import nn
-from torchtoolbox.network.modules.backbones.regnet import _regnet, SE, make_divisible
-from torchtoolbox.network.nn.norm import get_normalization
-from torchtoolbox.network.modules.backbones.backbone import Backbone
 from .onn_module import ONNLayer
+from .regnet import Backbone, SE, make_divisible
 from mmdet.models.builder import BACKBONES
-
-
 
 class Stage(nn.Module):
     def __init__(
@@ -29,6 +25,7 @@ class Stage(nn.Module):
         onn_stage=[3],
         use_bias=False,
         use_abs=False,
+        use_square=False,
     ):
         super().__init__()
         width = make_divisible(out_c * bottleneck_ratio)
@@ -88,7 +85,8 @@ class Stage(nn.Module):
                                     28, 
                                     config['layersCount'],
                                     use_bias,
-                                    use_abs),
+                                    use_abs,
+                                    use_square),
                             norm(out_c),
                             nn.ReLU(inplace=True),
                             nn.Conv2d(
@@ -107,11 +105,11 @@ class Stage(nn.Module):
             self.skip_connection = nn.Sequential(
                 nn.Conv2d(in_c, out_c, kernel_size=1, stride=stride, bias=False),
                 norm(out_c),
-                QuantInput() if quantization_mode else nn.Identity(),
+                nn.Identity(),
             )
         else:
             self.skip_connection = (
-                nn.Identity() if not quantization_mode else QuantInput()
+                nn.Identity()
             )
 
         self.act = nn.ReLU(inplace=True)
@@ -122,16 +120,6 @@ class Stage(nn.Module):
         x = self.act(x + skip)
         return x
 
-class Head(nn.Module):
-    def __init__(self, in_c, out_c):
-        super(Head, self).__init__()
-        self.block = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(in_c, out_c, bias=True)
-        )
-
-    def forward(self, x):
-        return self.block(x)
-
 class Stem(nn.Module):
     def __init__(self, in_c, out_c, norm=nn.BatchNorm2d, fast_downsample=False):
         super().__init__()
@@ -139,43 +127,6 @@ class Stem(nn.Module):
             nn.Conv2d(in_c, out_c, kernel_size=3, stride=2, padding=1, bias=False)
             if not fast_downsample
             else nn.Conv2d(in_c, out_c, kernel_size=4, stride=4, bias=False),
-            norm(out_c),
-            nn.ReLU(inplace=True),
-        )
-
-    def forward(self, x):
-        return self.block(x)
-
-class ONNStem(nn.Module):
-    def __init__(self, in_c, out_c, norm=nn.BatchNorm2d, fast_downsample=False):
-        super().__init__()
-        config = {"conv1_out_channels": 2,
-                "conv2_out_channels": 4, 
-                "lmbda": 640e-9,
-                "dx": 1.75e-6,
-                "nd": num_map[stage_index],
-                "d1": 100e-6,
-                "d2": 100e-6,
-                "N": num_map[stage_index],
-                "layersCount": layers_count_map[stage_index]
-        }
-        nd = config['nd']
-        dx = config['dx']
-        L = nd * dx
-        self.block = nn.Sequential(
-            ONNLayer(in_c, 
-                    out_c,
-                    config['nd'], 
-                    L, 
-                    config['lmbda'], 
-                    config['d1'], 
-                    config['d2'], 
-                    config['N'], 
-                    28, 
-                    config['layersCount']),
-            norm(out_c),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_c, out_c, kernel_size=3, stride=2, padding=1, bias=False),
             norm(out_c),
             nn.ReLU(inplace=True),
         )
@@ -193,35 +144,31 @@ class Regnet(Backbone):
         b=1,
         se=False,
         out_strides=None,
-        norm="batch_norm_2d",
+        norm=nn.BatchNorm2d,
         fast_downsample: bool = False,
         quantization_mode: bool = False,
         onn_cfg=None,
         onn_stage = [],
-        use_flag = False,
         delete_extra = False,
         use_bias = False,
         use_abs = False,
+        use_v2=True,
+        use_square = False,
     ):
         strides = [2, 4, 8, 16, 32]
         channels = [32] + w
-        super().__init__(out_strides, channels, strides)
-        assert isinstance(quantization_mode, bool) , f"quantization_mode should be a bool value. but got {quantization_mode}"
-        if quantization_mode:
-            assert (
-                QuantInput is not None
-            ), "Can't import quant layer, plaese make sure you have pytorch-quantization and torchtoolbox>2.2.0."
-        self.quantization_mode = quantization_mode
+        super(Regnet, self).__init__(out_strides, channels, strides)
         self.reduction_ratio = 0.25 if se else 0
         self.bottleneck_ratio = b
         self.group_width = g
         stem_c = 32
-        norm = get_normalization(norm)
+        self.quantization_mode = quantization_mode
         self.onn_stage = onn_stage
-        self.use_flag = use_flag
         self.delete_extra = delete_extra
         self.use_bias = use_bias
         self.use_abs = use_abs
+        self.use_square = use_square
+        self.use_v2 = use_v2
 
         stem = Stem(3, stem_c, norm=norm, fast_downsample=fast_downsample)
         stage1 = self._make_layer(stem_c, w[0], d[0], 2, norm, onn_cfg, stage_index=0)
@@ -229,8 +176,7 @@ class Regnet(Backbone):
         stage3 = self._make_layer(w[1], w[2], d[2], 2, norm, onn_cfg, stage_index=2)
         stage4 = self._make_layer(w[2], w[3], d[3], 2, norm, onn_cfg, stage_index=3)
         self.features = nn.Sequential(stem, stage1, stage2, stage3, stage4)
-        if self.out_stride is None:
-            self.head = Head(w[3], num_classes)
+
 
     def _make_layer(self, in_c, out_c, blocks, stride=2, norm=nn.BatchNorm2d, onn_cfg=None, stage_index=0):
         layers = []
@@ -249,9 +195,10 @@ class Regnet(Backbone):
                 onn_stage=self.onn_stage,
                 use_bias=self.use_bias,
                 use_abs=self.use_abs,
+                use_square=self.use_square,
             )
         )
-        if not self.delete_extra:
+        if not self.delete_extra or (self.use_v2 and stage_index not in self.onn_stage):
             for _ in range(1, blocks):
                 layers.append(
                     Stage(
@@ -264,10 +211,11 @@ class Regnet(Backbone):
                         norm,
                         quantization_mode=self.quantization_mode,
                         onn_cfg=onn_cfg,
-                        stage_index=stage_index if not self.use_flag else 0,
-                        onn_stage=self.onn_stage if not self.use_flag else [],
+                        stage_index=stage_index,
+                        onn_stage=self.onn_stage,
                         use_bias=self.use_bias,
                         use_abs=self.use_abs,
+                        use_square=self.use_square,
                     )
                 )
         return nn.Sequential(*layers)
@@ -276,28 +224,26 @@ class Regnet(Backbone):
         coll = []
         for i, layer in enumerate(self.features):
             x = layer(x)
-            if i in self.out_index:
+            if i in self.out_feature_index:
                 coll.append(x)
         return coll
 
     def forward(self, x):
-        if self.out_stride is None:
-            x = self.features(x)
-            # x = self.head(x)
-            return x
-        else:
-            return self.coll_forward(x)
+        return self.coll_forward(x)
 
 
 _regnetx_config = {
     "200MF": {"d": [1, 1, 4, 7], "w": [24, 56, 152, 368], "g": 8},
     "200MFONN": {"d": [1, 1, 4, 7], "w": [24, 56, 152, 368], "g": 8},
     "400MF": {"d": [1, 2, 7, 12], "w": [32, 64, 160, 384], "g": 16},
-    "400MFONN": {"d": [1, 2, 7, 12], "w": [32, 64, 160, 384], "g": 16},
     "600MF": {"d": [1, 3, 5, 7], "w": [48, 96, 240, 528], "g": 24},
     "800MF": {"d": [1, 3, 7, 5], "w": [64, 128, 288, 672], "g": 16},
     "800MFONNV1": {"d": [1, 3, 7, 5], "w": [64, 128, 288, 256], "g": 16},
+    "800MFONNV1.1": {"d": [1, 3, 7, 5], "w": [64, 128, 288, 128], "g": 16},
+    "800MFONNV1.2": {"d": [1, 3, 7, 5], "w": [64, 128, 288, 32], "g": 16},
+    "800MFONNV1.3": {"d": [1, 3, 7, 5], "w": [64, 128, 288, 16], "g": 16},
     "800MFONNV2": {"d": [1, 3, 7, 5], "w": [64, 128, 160, 256], "g": 16},
+    "800MFONNV3": {"d": [1, 3, 7, 5], "w": [64, 96, 96, 96], "g": 16},
     "1.6GF": {"d": [2, 4, 10, 2], "w": [72, 168, 408, 912], "g": 24},
     "3.2GF": {"d": [2, 6, 15, 2], "w": [96, 192, 432, 1008], "g": 48},
     "4.0GF": {"d": [2, 5, 14, 2], "w": [80, 240, 560, 1360], "g": 40},

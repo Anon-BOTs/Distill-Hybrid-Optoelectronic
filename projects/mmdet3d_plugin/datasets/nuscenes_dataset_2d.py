@@ -36,11 +36,6 @@ from mmdet.core import eval_recalls
 
 @DATASETS.register_module(force=True)
 class CustomNuScenesDataset2D(NuScenesDataset):
-    r"""NuScenes Dataset.
-
-    This datset only add camera intrinsics and extrinsics to the results.
-    """
-
     def __init__(self, collect_keys, use_front_cam=True, 
                 seq_mode=False, seq_split_num=1, num_frame_losses=1, queue_length=8, random_length=0, *args, **kwargs):
         self.use_front_cam = use_front_cam
@@ -50,7 +45,6 @@ class CustomNuScenesDataset2D(NuScenesDataset):
         self.random_length = random_length
         self.num_frame_losses = num_frame_losses
         self.seq_mode = seq_mode
-        # self.data_infos = self.data_infos[:10]
         if self.test_mode:
             if use_front_cam:
                 self.coco = COCO('/high_perf_store/surround-view/datasets/nuscenes_infos_val_mono3d_front.coco.json')

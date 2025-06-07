@@ -4,8 +4,6 @@ from typing import List, Union
 import numpy as np
 import torch
 from torch import nn
-from torchtoolbox.network.modules.backbones.regnet import _regnet
-
 from mmdet.models.builder import BACKBONES
 
 class Backbone(nn.Module, abc.ABC):
@@ -244,8 +242,7 @@ class Regnet(Backbone):
         stage3 = self._make_layer(w[1], w[2], d[2], 2, norm)
         stage4 = self._make_layer(w[2], w[3], d[3], 2, norm)
         self.features = nn.Sequential(stem, stage1, stage2, stage3, stage4)
-        if self.out_features_stride is None:
-            self.head = Head(w[3], num_classes)
+
 
     def _make_layer(self, in_c, out_c, blocks, stride=2, norm=nn.BatchNorm2d):
         layers = []
@@ -313,6 +310,11 @@ _regnety_config = {
     "32GF": {"d": [2, 5, 12, 1], "w": [232, 696, 1392, 3712], "g": 232},
 }
 
+def _regnet(name, b=1, se=False, **kwargs):
+    config = _regnetx_config[name] if not se else _regnety_config[name]
+
+    d, w, g = config["d"], config["w"], config["g"]
+    return Regnet(d, w, g, b=b, se=se, **kwargs)
 
 @BACKBONES.register_module(force=True)
 class RegNet(nn.Module):
