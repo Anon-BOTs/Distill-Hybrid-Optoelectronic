@@ -411,14 +411,35 @@ class ONNMMRegNet(ResNet):
             if self.up_modules[i] != None:
                 x = self.up_modules[i](x)
             if self.add_noise and i in self.onn_stage:
-                shape = x.shape
-                noise = torch.rand(*shape).to(x.device)
-                x = x + noise
-
+                ## use 100% noise
+                # shape = x.shape
+                # noise = torch.rand(*shape).to(x.device)
+                # x = x + noise
+                ## use percent noise
+                x = add_noise(x, percent=0.05)
             if i in self.out_indices:
                 outs.append(x)
         return tuple(outs)
 
+def add_noise(tensor, percent=0.1):
+    B, C, H, W = tensor.shape
+    total_elements = B * C * H * W
+    
+    num_noise_elements = int(total_elements * percent)
+    indices = torch.randperm(total_elements)[:num_noise_elements]
+    
+    b_indices = indices // (C * H * W)
+    remaining = indices % (C * H * W)
+    c_indices = remaining // (H * W)
+    remaining = remaining % (H * W)
+    h_indices = remaining // W
+    w_indices = remaining % W
+    
+    noise = torch.randn(num_noise_elements, device=tensor.device, dtype=tensor.dtype)
+    output = tensor.clone()
+    output[b_indices, c_indices, h_indices, w_indices] += noise
+    
+    return output
 
 class ResLayerV2(Sequential):
     """ResLayer to build ResNet style backbone.

@@ -154,6 +154,7 @@ class Regnet(Backbone):
         use_abs = False,
         use_v2=True,
         use_square = False,
+        add_noise=False,
     ):
         strides = [2, 4, 8, 16, 32]
         channels = [32] + w
@@ -169,6 +170,7 @@ class Regnet(Backbone):
         self.use_abs = use_abs
         self.use_square = use_square
         self.use_v2 = use_v2
+        self.add_noise = add_noise
 
         stem = Stem(3, stem_c, norm=norm, fast_downsample=fast_downsample)
         stage1 = self._make_layer(stem_c, w[0], d[0], 2, norm, onn_cfg, stage_index=0)
@@ -224,12 +226,39 @@ class Regnet(Backbone):
         coll = []
         for i, layer in enumerate(self.features):
             x = layer(x)
+            if self.add_noise and i in self.onn_stage:
+                ## use 100% noise
+                # shape = x.shape
+                # noise = torch.rand(*shape).to(x.device)
+                # x = x + noise
+                ## use percent noise
+                x = add_noise(x, percent=0.05)
             if i in self.out_feature_index:
                 coll.append(x)
         return coll
 
     def forward(self, x):
         return self.coll_forward(x)
+
+def add_noise(tensor, percent=0.1):
+    B, C, H, W = tensor.shape
+    total_elements = B * C * H * W
+    
+    num_noise_elements = int(total_elements * percent)
+    indices = torch.randperm(total_elements)[:num_noise_elements]
+    
+    b_indices = indices // (C * H * W)
+    remaining = indices % (C * H * W)
+    c_indices = remaining // (H * W)
+    remaining = remaining % (H * W)
+    h_indices = remaining // W
+    w_indices = remaining % W
+    
+    noise = torch.randn(num_noise_elements, device=tensor.device, dtype=tensor.dtype)
+    output = tensor.clone()
+    output[b_indices, c_indices, h_indices, w_indices] += noise
+    
+    return output
 
 
 _regnetx_config = {

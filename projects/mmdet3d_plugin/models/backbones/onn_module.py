@@ -89,9 +89,34 @@ class phase_modulation(nn.Module):
         start_idx = (self.M - self.N) // 2
         # Place the N x N phase_values at the center of the M x M matrix
         padded_phase_values[..., start_idx:start_idx+self.N, start_idx:start_idx+self.N] = self.phase_values
+
+        ## add noise to phase values
+        padded_phase_values[..., start_idx:start_idx+self.N, start_idx:start_idx+self.N] = \
+                add_noise(padded_phase_values[..., start_idx:start_idx+self.N, start_idx:start_idx+self.N], 0.05)
         padded_phase_values = torch.exp(tmp * 2 * torch.pi * padded_phase_values)
         input_tensor = input_tensor * padded_phase_values
         return input_tensor
+
+
+def add_noise(tensor, percent=0.1):
+    B, C, H, W = tensor.shape
+    total_elements = B * C * H * W
+    
+    num_noise_elements = int(total_elements * percent)
+    indices = torch.randperm(total_elements)[:num_noise_elements]
+    
+    b_indices = indices // (C * H * W)
+    remaining = indices % (C * H * W)
+    c_indices = remaining // (H * W)
+    remaining = remaining % (H * W)
+    h_indices = remaining // W
+    w_indices = remaining % W
+    
+    noise = torch.randn(num_noise_elements, device=tensor.device, dtype=tensor.dtype)
+    output = tensor.clone()
+    output[b_indices, c_indices, h_indices, w_indices] += noise
+    
+    return output
 
 class OpticalLayer(nn.Module):
     def __init__(self, M, L, lmbda, z1, z2, N, ni, layersCount, out_channels, in_channels, use_bias=False, use_abs=False):
