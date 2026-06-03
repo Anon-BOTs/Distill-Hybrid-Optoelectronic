@@ -1,7 +1,10 @@
 <div align='center'>
 
 # <p><strong><em>PHOENIX:</em></strong></p> Photonic Distillation Transfers Electronic Knowledge to Hybrid Optical Neural Networks
-Authors
+Shaoqing Xu<sup>1</sup>, Fang Li<sup>1</sup>, Mingyuan Li<sup>2</sup>, Zijia Feng<sup>3</sup>, Zhecheng Zhu<sup>4</sup>, Xing Mou<sup>4*</sup>, Qisheng Yang<sup>2</sup>, Zhi-xin Yang<sup>1*</sup>
+<br>
+
+<sup>1</sup>University of Macau,  <sup>2</sup>Hunan University, <sup>3</sup>Tsinghua University, <sup>4</sup>National University of Defense Technology
 </div>
 
 ## Introduction
